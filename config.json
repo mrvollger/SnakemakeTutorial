@@ -1,5 +1,5 @@
 {
-	"fofn" : "/net/eichler/vol2/home/mvollger/projects/SnakemakeTutorial/testcase/input.fofn",
-	"reference" : "/net/eichler/vol2/home/mvollger/projects/SnakemakeTutorial/testcase/ref.fasta"
+	"fofn" : "testcase/input.fofn",
+	"reference" : "testcase/ref.fasta"
 }
 
