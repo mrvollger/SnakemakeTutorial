@@ -34,5 +34,26 @@ rule mean_words_per_row:
 
 
 
+#
+# you can include rules that are not part of the dag and then run them using the rule name
+# e.g. 
+# snakemake get_SD
+#
+rule get_SD:
+	input:	
+		count = "count.txt",
+	output:
+		sd="sd.txt"
+	run:
+		# you can import and use all your favorite python libs
+		import numpy as np
+		lines = open(input["count"]).readlines()
+		counts = [ int(line.strip()) for line in lines]
+		result = np.std(counts)
+		out = "SD of words per row: {}\n".format(result)
+		open(output["sd"], "w+").write(out)
+
+
+
 
 
