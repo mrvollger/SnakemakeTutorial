@@ -1,0 +1,117 @@
+import os
+import sys
+import re
+import glob
+
+
+configfile: "config.yaml"
+
+lines = open(config["fastq"]).readlines()
+fastqs = []
+for line in lines:
+	fastq = line.strip()
+	if("Undetermined" not in fastq):
+		fastqs.append(fastq)
+names = [ os.path.basename(fastq) for fastq in fastqs]
+
+# get screens 
+fastqToScreen = {}
+screens = []
+for fastq in fastqs:
+	match = re.match(".*Screen-([\d+]).*", fastq)
+	assert match is not None
+	fastqToScreen[fastq] = match.group(1)
+	screens.append(match.group(1))
+
+# get gene names for each fastq
+genes = []
+for name, fastq in zip(names, fastqs):
+	match = re.match(r'([a-zA-Z0-9]+)_.*', name)
+	assert match is not None
+	gene = match.group(1)
+	if(gene == "A549"):
+		gene = "EMPTY"
+	genes.append(gene)
+
+
+# lets get the variants
+variants = []
+for gene, name in zip(genes, names):
+	if(gene in ["EMPTY", "EGFP", "HCRED", "LUCIFERASE"] ):
+		var = "None"
+	else:
+		#match = re.match(r'.*(WT_|(?:p\.[a-zA-Z0-9]+_)+|ex[a-zA-Z0-9]+del_).*', name)
+		matches = re.findall(r'WT_|p\.[a-zA-Z0-9]+_|ex[a-zA-Z0-9]+del_', name)
+		assert len(matches) > 0 , name
+		matches = [match.strip("_") for match in matches]
+		var = "_".join(matches)
+	variants.append(var)
+
+
+
+#make new name
+parsed = {}
+fastqToNew = {}
+for gene, var, screen, name, fastq in zip(genes, variants, screens, names, fastqs):
+	rvar = var
+	if(var == "None"):
+		rvar = ""
+	pattern = r".*(" + gene + r")_(" + rvar + r")(.+)_(L\d+_R\d_\d+|\d+\.\d+)\.(fastq.*)"
+	match = re.match(pattern, name)
+	assert match is not None, name
+	gene, xvar, rep, readgr, ext = match.groups()
+	rep = re.sub(r"_S\d+", "", rep.strip("_") )
+	match2 = re.match(r"L(\d+)_R(\d)_\d+|(\d+)\.(\d+)", readgr)
+	assert match2 is not None, readgr
+	tmp = []	
+	for x in match2.groups():
+		if x is not None:
+			tmp.append(x)
+	fastqID = tmp[0].lstrip("0"); RG = tmp[1]
+	
+	newName = "symfastq/{}__{}__{}__{}__{}__{}.{}".format(gene, var, rep, screen, fastqID, RG, ext)
+	#print(newName, name)
+	parse = (gene, var, rep, screen, fastqID, RG)
+	parsed[fastq] = parse
+	fastqToNew[fastq] = newName	
+
+
+
+rule all:
+	input:
+		con="symfastq/conversion.tbl",
+
+rule makeSyms:
+	input: fastqs
+	output: fastqToNew.values() 
+	run:
+		for fastq in input:
+			src = os.path.abspath(fastq)
+			dest = os.path.abspath(fastqToNew[fastq])
+			shell("ln -s {} {}".format(src, dest))
+
+rule conversion:
+	input: 
+		fastqs=fastqs,
+		new=fastqToNew.values(),
+	output:	
+		con="symfastq/conversion.tbl",
+	run:
+		f = open(output["con"], "w+")
+		out=""
+		for fastq in input["fastqs"]:
+			new = fastqToNew[fastq]
+			out += "{}\t{}\n".format(os.path.abspath(fastq), os.path.abspath(new))
+		f.write(out)
+		f.close()
+
+
+
+
+
+
+
+
+
+
+
