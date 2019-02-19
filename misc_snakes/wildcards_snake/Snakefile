@@ -14,7 +14,7 @@ for line in lines:
 		fastqs.append(fastq)
 names = [ os.path.basename(fastq) for fastq in fastqs]
 
-# get screens 
+# Get screens (batches)
 fastqToScreen = {}
 screens = []
 for fastq in fastqs:
@@ -23,7 +23,7 @@ for fastq in fastqs:
 	fastqToScreen[fastq] = match.group(1)
 	screens.append(match.group(1))
 
-# get gene names for each fastq
+# Get gene names for each fastq
 genes = []
 for name, fastq in zip(names, fastqs):
 	match = re.match(r'([a-zA-Z0-9]+)_.*', name)
@@ -34,7 +34,7 @@ for name, fastq in zip(names, fastqs):
 	genes.append(gene)
 
 
-# lets get the variants
+# Get the variants (None, WT, or some variant)
 variants = []
 for gene, name in zip(genes, names):
 	if(gene in ["EMPTY", "EGFP", "HCRED", "LUCIFERASE"] ):
@@ -49,7 +49,7 @@ for gene, name in zip(genes, names):
 
 
 
-#make new name
+# Generate new name
 parsed = {}
 fastqToNew = {}
 for gene, var, screen, name, fastq in zip(genes, variants, screens, names, fastqs):
@@ -74,8 +74,7 @@ for gene, var, screen, name, fastq in zip(genes, variants, screens, names, fastq
 	parse = (gene, var, rep, screen, fastqID, RG)
 	parsed[fastq] = parse
 	fastqToNew[fastq] = newName	
-
-
+        
 
 rule all:
 	input:
@@ -85,7 +84,9 @@ rule makeSyms:
 	input: fastqs
 	output: fastqToNew.values() 
 	run:
+                print("start")
 		for fastq in input:
+                        print(fastq)
 			src = os.path.abspath(fastq)
 			dest = os.path.abspath(fastqToNew[fastq])
 			shell("ln -s {} {}".format(src, dest))
@@ -104,14 +105,6 @@ rule conversion:
 			out += "{}\t{}\n".format(os.path.abspath(fastq), os.path.abspath(new))
 		f.write(out)
 		f.close()
-
-
-
-
-
-
-
-
 
 
 
