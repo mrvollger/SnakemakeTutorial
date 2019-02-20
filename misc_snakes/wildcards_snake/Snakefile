@@ -52,6 +52,7 @@ for gene, name in zip(genes, names):
 # Generate new name
 parsed = {}
 fastqToNew = {}
+newToFastq = {}
 for gene, var, screen, name, fastq in zip(genes, variants, screens, names, fastqs):
 	rvar = var
 	if(var == "None"):
@@ -74,27 +75,46 @@ for gene, var, screen, name, fastq in zip(genes, variants, screens, names, fastq
 	parse = (gene, var, rep, screen, fastqID, RG)
 	parsed[fastq] = parse
 	fastqToNew[fastq] = newName	
-        
+	newToFastq[newName] = fastq 
+
+
+wildcard_constraints:
+	fastq=".*symfastq.*(fastq|fastq\.gz)"
 
 rule all:
 	input:
 		con="symfastq/conversion.tbl",
 
+def oldFastq(wildcards):
+	key = str(wildcards["fastq"])
+	value = newToFastq[key]
+	return(value)
+
 rule makeSyms:
-	input: fastqs
-	output: fastqToNew.values() 
-	run:
-                print("start")
+	input: 
+		old = oldFastq,
+	output: 
+		new = "{fastq}",
+	run:	
+		src = os.path.abspath(input["old"])
+		dest = os.path.abspath(output["new"])
+		shell("ln -s {} {}".format(src, dest))
+
+'''
+run:
+        print("start")
 		for fastq in input:
                         print(fastq)
 			src = os.path.abspath(fastq)
 			dest = os.path.abspath(fastqToNew[fastq])
 			shell("ln -s {} {}".format(src, dest))
+'''
 
 rule conversion:
 	input: 
 		fastqs=fastqs,
-		new=fastqToNew.values(),
+		#new=fastqToNew.values(),
+		new=expand("{fastq}", fastq = newToFastq.keys()), 
 	output:	
 		con="symfastq/conversion.tbl",
 	run:
