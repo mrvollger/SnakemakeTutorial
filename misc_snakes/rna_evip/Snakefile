@@ -1,0 +1,56 @@
+import os
+import sys
+import re
+import pandas as pd
+
+
+configfile: "config.yaml"
+
+dataDir = config["dataDir"]
+bamDir = config["bamDir"]
+
+conv = pd.read_table(config["fastqConversions"],
+                     header = None,
+                     names = ["Original", "SymLink"])
+# print(conv["SymLink"])
+
+sampleToFastq = {}
+
+for fastq in conv["SymLink"]:
+    gene, variant, rep, screen, lane, readgroup = fastq.strip().split("__")
+    key = gene + "__" + variant + "__" + rep + "__" + screen
+    if (key not in sampleToFastq):
+        sampleToFastq[key] = []
+    sampleToFastq[key].append(fastq)
+
+
+rule all:
+    input:
+        expand(bamDir + "{sample}.bam",
+               sample = sampleToFastq.keys())
+
+    
+def sample_wildcard_to_fastq(wildcards):
+    key = str(wildcards)
+    print(key)
+    return(sampleToFastq[key])
+    
+rule STARalign:
+    input: sample_wildcard_to_fastq
+    output:
+        bam = bamDir + "{sample}.bam", 
+        bai = bamDir + "{sample}.bam.bai"
+    params:
+        outDir = bamDir + "/{sample}/"
+#    log: "logs/STAR/{sample}.log"
+    threads: 8
+    shell:
+        """
+        mkdir -p {params.outDir}
+        """
+
+def repgroup_wildcard_to_bam(wildcards):
+    return
+               
+
+
