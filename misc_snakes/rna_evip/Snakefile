@@ -6,8 +6,7 @@ import pandas as pd
 
 configfile: "config.yaml"
 
-dataDir = config["dataDir"]
-bamDir = config["bamDir"]
+bamDir = os.path.abspath(config["bamDir"]) + "/"
 
 conv = pd.read_table(config["fastqConversions"],
                      header = None,
@@ -17,7 +16,10 @@ conv = pd.read_table(config["fastqConversions"],
 sampleToFastq = {}
 
 for fastq in conv["SymLink"]:
-    gene, variant, rep, screen, lane, readgroup = fastq.strip().split("__")
+#    print(fastq)
+    assert os.path.exists(fastq)
+    fastqfile = os.path.basename(fastq)
+    gene, variant, rep, screen, lane, readgroup = fastqfile.strip().split("__")
     key = gene + "__" + variant + "__" + rep + "__" + screen
     if (key not in sampleToFastq):
         sampleToFastq[key] = []
@@ -29,28 +31,73 @@ rule all:
         expand(bamDir + "{sample}.bam",
                sample = sampleToFastq.keys())
 
-    
-def sample_wildcard_to_fastq(wildcards):
-    key = str(wildcards)
-    print(key)
-    return(sampleToFastq[key])
-    
+def sample_wildcard_to_fastqR1s(wildcards):
+    key = str(wildcards.sample)
+#    print(key)
+    fastqs = sampleToFastq[key]
+    fastqR1s = []
+    for fastq in fastqs:
+#        print(fastq)
+        readgroup = fastq.strip().split("__")[-1].split(".")[0]
+        if readgroup == "1":
+            fastqR1s.append(fastq)
+#        else:           
+    return(fastqR1s)
+
+def sample_wildcard_to_fastqR2s(wildcards):
+    key = str(wildcards.sample)
+#    print(key)
+    fastqs = sampleToFastq[key]
+    fastqR2s = []
+    for fastq in fastqs:
+#        print(fastq)
+        readgroup = fastq.strip().split("__")[-1].split(".")[0]
+        if readgroup == "2":
+            fastqR2s.append(fastq)
+#        else:           
+    return(fastqR2s)
+
 rule STARalign:
-    input: sample_wildcard_to_fastq
+    input:
+        fastqR1s = sample_wildcard_to_fastqR1s,
+        fastqR2s = sample_wildcard_to_fastqR2s
     output:
-        bam = bamDir + "{sample}.bam", 
-        bai = bamDir + "{sample}.bam.bai"
+        bam = bamDir + "{sample}.bam"
+#        bai = bamDir + "{sample}.bam.bai"
     params:
-        outDir = bamDir + "/{sample}/"
-#    log: "logs/STAR/{sample}.log"
-    threads: 8
+        outDir = bamDir + "{sample}/",
+        STAR = config["STAR"],
+        genomeDir = config["STARgenome"]        
+    log: "logs/STAR/{sample}.log"
+    threads: 4
     shell:
         """
         mkdir -p {params.outDir}
+        R1list=$(echo {input.fastqR1s} | tr ' ' ,)
+        R2list=$(echo {input.fastqR2s} | tr ' ' ,)
+        echo $R1list
+        echo $R2list
+        {params.STAR} --runThreadN {threads} --genomeDir {params.genomeDir} --readFilesIn "$R1list" "$R2list" --readFilesCommand zcat --outFileNamePrefix {params.outDir} --outSAMtype BAM SortedByCoordinate --twopassMode Basic 2>{log}
+        mv {params.outDir}Aligned.sortedByCoord.out.bam {output.bam}
         """
 
-def repgroup_wildcard_to_bam(wildcards):
+
+def repgroup_wildcard_to_bams(wildcards):
     return
-               
 
 
+# rule rMATS:
+#     input:
+#         bams1 = repgroup_wildcard_to_bam,
+#         bams2 = repgroup_wildcard_to_bam
+#     output:
+#     params:
+#         rMATS: 
+#         outDir,
+#         gtf
+#     log:
+#     threads: 4
+#     shell:
+#         """
+#         python 
+#         """
