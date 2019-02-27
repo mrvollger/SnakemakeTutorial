@@ -82,6 +82,52 @@ rule STARalign:
         """
 
 
+#
+# untested additions by mitchell
+#
+controlSets = {}
+varSets = {}
+for sample in sampleToFastq.keys():
+    gene, variant, rep, screen = sample.strip().split("__")
+	key = gene + "__" var
+	bam = sample + ".bam"
+	if(gene in ["EGFP", "LUCIFERASE", "HCRED", "EMPTY"]):
+		if(key not in controlSets):
+			controlSets[key] = []
+		controlSets[key].append(bam)
+	else:
+		if(key not in varSets):
+			var[key] = []
+		var[key].append(bam)
+
+def varBams(wildcards):
+	key = str(wildcards.var)
+	return(varSets[key])
+
+def controlBams(wildcards):
+	key = str(wildcards.var)
+	return(controlSets[key])
+
+
+rule fakeall:
+	input: 
+		cmp = expand("{var}VS{control}.txt", var = varSets.keys(), control=controlSets.keys()), 
+
+rule cmpThings:
+	input:
+		vars = varBams,
+		controls = controlBams,
+	output:
+		cmp = "{var}VS{control}.txt",
+	shell:"""
+stuff
+"""
+
+
+#
+# end untested
+#
+
 def repgroup_wildcard_to_bams(wildcards):
     return
 
