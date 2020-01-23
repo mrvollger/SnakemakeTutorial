@@ -18,6 +18,9 @@ rule bwa_index:
 		"bwa index {input.ref}"
 
 
+
+
+
 rule bwa_map:
 	input:
 		ref= "data/genome.fa",
@@ -30,6 +33,8 @@ rule bwa_map:
 
 
 
+
+
 rule sort_aln:
 	input:
 		sam= "mapped_reads/A.unsorted.sam"
@@ -37,6 +42,10 @@ rule sort_aln:
 		bam= "mapped_reads/A.bam"
 	shell:
 		"samtools view -Su -F 4 {input.sam} | samtools sort - > {output.bam} "
+
+
+
+
 
 
 rule count_alns:
