@@ -9,7 +9,7 @@ rule all:
 
 rule bwa_index:
 	input:
-		ref= "data/genome.fa",
+		ref= "data/genome.fa"
 	output:
 		amb = "data/genome.fa.amb",
 		ann = "data/genome.fa.ann",
@@ -20,13 +20,20 @@ rule bwa_index:
 		"bwa index {input.ref}"
 
 
-
+rule ref_index:
+	input:	
+		ref= "data/genome.fa"
+	output:
+		fai = "data/genome.fa.fai"
+	shell:
+		"samtools faidx {input.ref} "
 
 
 rule bwa_map:
 	input:
 		ref= "data/genome.fa",
 		reads= "data/samples/A.fastq",
+		fai = "data/genome.fa.fai",
 		index = rules.bwa_index.output
 	output:
 		sam= "mapped_reads/A.unsorted.sam"
