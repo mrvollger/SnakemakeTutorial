@@ -1,3 +1,5 @@
+
+
 rule all:
 	input:
 		bam = "mapped_reads/A.bam"
@@ -34,7 +36,6 @@ rule bwa_map:
 
 
 
-
 rule sort_aln:
 	input:
 		sam= "mapped_reads/A.unsorted.sam"
@@ -58,5 +59,6 @@ rule count_alns:
 		count = 0
 		for line in sam:
 			if(line[0] != "@"): count += 1
-		open(output["count"], "w+").write("# of alns: {}\n".format(count))
+		out = open(output["count"], "w+")
+		out.write("# of alns: {}\n".format(count))
 
