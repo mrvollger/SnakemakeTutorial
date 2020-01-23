@@ -1,0 +1,43 @@
+rule all:
+	input:
+		bam = "mapped_reads/A.bam"
+
+
+
+
+rule bwa_index:
+	input:
+		ref= "data/genome.fa",
+	output:
+		amb = "data/genome.fa.amb",
+		ann = "data/genome.fa.ann",
+		bwt = "data/genome.fa.bwt",
+		pac = "data/genome.fa.pac",
+		sa =   "data/genome.fa.sa"
+	shell:
+		"bwa index {input.ref}"
+
+
+rule bwa_map:
+	input:
+		ref= "data/genome.fa",
+		reads= "data/samples/A.fastq",
+		index = rules.bwa_index.output
+	output:
+		sam= "mapped_reads/A.unsorted.sam"
+	shell:
+		"module load bwa/0.7.17 && bwa mem {input.ref} {input.reads} > {output.sam}"
+
+
+
+rule sort_aln:
+	input:
+		sam= "mapped_reads/A.unsorted.sam"
+	output:
+		bam= "mapped_reads/A.bam"
+	shell:
+		"samtools view -Su -F 4 {input.sam} | samtools sort - > {output.bam} "
+
+
+#rule count_alns:
+
