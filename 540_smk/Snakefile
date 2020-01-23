@@ -1,13 +1,12 @@
 # GENERAL SYNTAX
-"""
-rule {rulename}:
-	input:
-		{inputs files}
-	output:
-		{output files}
-	shell:
-		"{shell commands}"
-"""
+
+# rule {rulename}:
+#	input:
+#		{inputs files}
+#	output:
+#		{output files}
+#	shell:
+#		"{shell commands}"
 
 
 
