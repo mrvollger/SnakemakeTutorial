@@ -26,7 +26,7 @@ rule bwa_map:
 	output:
 		sam= "mapped_reads/A.unsorted.sam"
 	shell:
-		"module load bwa/0.7.17 && bwa mem {input.ref} {input.reads} > {output.sam}"
+		"bwa mem {input.ref} {input.reads} > {output.sam}"
 
 
 
@@ -39,5 +39,15 @@ rule sort_aln:
 		"samtools view -Su -F 4 {input.sam} | samtools sort - > {output.bam} "
 
 
-#rule count_alns:
+rule count_alns:
+	input:
+		sam= "mapped_reads/A.unsorted.sam"
+	output:
+		count= "mapped_reads/A.aln.count.txt"
+	run:
+		sam = open(input["sam"])
+		count = 0
+		for line in sam:
+			if(line[0] != "@"): count += 1
+		open(output["count"], "w+").write("# of alns: {}\n".format(count))
 
