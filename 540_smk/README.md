@@ -23,3 +23,9 @@ snakemake count_alns
 ```
 snakemake --report report.html
 ```
+
+
+# Execute the snakemake on the cluster
+```
+snakemake --jobs 5 --cluster " qsub "
+```
