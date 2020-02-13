@@ -13,10 +13,12 @@ rule all:
 	input:
 		bam = "mapped_reads/A.bam"
 
+#		bam = expand("mapped_reads/{sm}.bam", sm = samples)
+
 
 rule bwa_index:
 	input:
-		ref= "data/genome.fa"
+		ref = "data/genome.fa"
 	output:
 		amb = "data/genome.fa.amb",
 		ann = "data/genome.fa.ann",
@@ -29,20 +31,20 @@ rule bwa_index:
 
 rule bwa_map:
 	input:
-		ref= "data/genome.fa",
-		index = rules.bwa_index.output
-		reads= "data/samples/A.fastq",
+		ref = "data/genome.fa",
+		index = rules.bwa_index.output,
+		reads = "data/samples/{sm}.fastq"
 	output:
-		sam= "mapped_reads/A.unsorted.sam"
+		sam = temp("mapped_reads/{sm}.unsorted.sam")
 	shell:
 		"bwa mem {input.ref} {input.reads} > {output.sam}"
 
 
 rule sort_aln:
 	input:
-		sam= "mapped_reads/A.unsorted.sam"
+		sam = "mapped_reads/{sm}.unsorted.sam"
 	output:
-		bam= "mapped_reads/A.bam"
+		bam = "mapped_reads/{sm}.bam"
 	shell:
 		"samtools view -Su -F 4 {input.sam} | samtools sort - > {output.bam} "
 
