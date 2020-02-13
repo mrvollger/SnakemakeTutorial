@@ -29,3 +29,8 @@ snakemake --report report.html
 ```
 snakemake --jobs 5 --cluster " qsub "
 ```
+
+
+# Run a snakemake that is not called `Snakefile`
+snakemake -s MultiSample.smk
+
